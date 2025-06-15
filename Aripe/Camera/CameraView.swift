@@ -127,7 +127,7 @@ struct CameraView: UIViewRepresentable {
             guard let buffer = lastSampleBuffer,
                   let imageBuffer = CMSampleBufferGetImageBuffer(buffer),
                   let model = model else {
-                completion(nil, "No frame or model detected", 0.0)
+                completion(nil, "No Frame Detected", 0.0)
                 return
             }
 
@@ -158,7 +158,7 @@ struct CameraView: UIViewRepresentable {
             )
             
             // Apply upward offset (positive dy moves down, negative dy moves up)
-            let horizontalOffset: CGFloat = -175
+            let horizontalOffset: CGFloat = -110
             let verticalOffset: CGFloat = 0
             cropRect = cropRect.offsetBy(dx: horizontalOffset, dy: verticalOffset)
 

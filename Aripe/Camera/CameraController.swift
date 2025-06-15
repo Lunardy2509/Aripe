@@ -12,3 +12,9 @@ class CameraController: ObservableObject {
         coordinator?.captureStillImage(cropRectInView: cropRectInView, completion: completion)
     }
 }
+
+class PredictionResult: ObservableObject {
+    @Published var image: UIImage?
+    @Published var label: String = ""
+    @Published var confidence: Double = 0.0
+}

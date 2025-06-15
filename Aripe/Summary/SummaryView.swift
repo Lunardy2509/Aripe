@@ -1,16 +1,8 @@
 import SwiftUI
 
 struct SummaryView: View {
-    let image: UIImage?
-    let predictionLabel: String
-    let confidence: Double
-
-    init(image: UIImage?, predictionLabel: String, confidence: Double) {
-        self.image = image
-        self.predictionLabel = predictionLabel
-        self.confidence = confidence
-        UINavigationBar.appearance().tintColor = UIColor.systemGreen
-    }
+    @ObservedObject var result: PredictionResult
+    @Binding var navigateToSummary: Bool
 
     private var formattedDate: String {
         let formatter = DateFormatter()
@@ -20,64 +12,100 @@ struct SummaryView: View {
     }
 
     private var resultInfo: (title: String, description: String, color: Color) {
-        switch predictionLabel.lowercased() {
+        switch result.label.lowercased() {
         case "unripe apple":
             return ("Belum Matang", "Apel masih keras dan belum manis", .orange)
         case "ripe apple":
-            return ("Matang", "Siap dikonsumsi, rasa manis maksimal", .green)
+            return ("Matang", "Siap dikonsumsi, rasa manis", .green)
         case "rotten apple":
             return ("Busuk", "Apel sudah tidak layak dikonsumsi", .red)
-        default:
+        case "not apple":
             return ("Tidak Dikenal", "Tidak bisa mendeteksi kondisi apel", .gray)
+        default:
+            return ("Hasil Tidak Dikenal", "Model tidak yakin hasilnya benar", .gray)
         }
     }
 
     private var isPredictionValid: Bool {
-        predictionLabel != "No Frame or model" && confidence > 0.0
+        let knownLabels = ["unripe apple", "ripe apple", "rotten apple", "not apple"]
+        return result.image != nil && knownLabels.contains(result.label.lowercased()) && result.confidence > 0.0
     }
 
     var body: some View {
+        
+        headerSection
+        
         ScrollView {
-            VStack(spacing: 16) {
-                if let image = image, isPredictionValid {
+            VStack(alignment: .leading, spacing: 16) {
+                if let image = result.image, isPredictionValid {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFit()
+                        .scaledToFill()
                         .frame(width: UIScreen.main.bounds.width - 32, height: UIScreen.main.bounds.width - 32)
                         .clipped()
                         .cornerRadius(16)
                         .padding(.horizontal, 16)
-                    Text(predictionLabel)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Text(formattedDate)
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                    
+                    predictionSection
                     resultSection
-                    storageSection
-                    buttonSection
+//                    storageSection
+//                    buttonSection
                 } else {
-                    Text("Foto tidak terdeteksi")
-                        .foregroundColor(.gray)
-                        .fontWeight(.semibold)
-                        .font(.title3)
-                    Text("Silakan coba scan ulang dengan pencahayaan yang lebih baik.")
-                        .font(.subheadline)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                    VStack(alignment: .center, spacing: 12) {
+                        Text("Foto tidak terdeteksi")
+                            .foregroundColor(.gray)
+                            .fontWeight(.semibold)
+                            .font(.title2)
+                        Text("Silakan coba scan ulang dengan pencahayaan yang lebih baik.")
+                            .font(.subheadline)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
-            .padding(.bottom)
+            .padding(.bottom, 32)
         }
-        .navigationTitle("Hasil Scan")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(false)
+//        .navigationTitle("Hasil Scan")
+//        .navigationBarTitleDisplayMode(.inline)
+//        .navigationBarBackButtonHidden(false)
+    }
+    
+    private var headerSection: some View {
+        HStack {
+            Text("Hasil Scan")
+                .font(.title2)
+                .fontWeight(.bold)
+            Spacer()
+            Button {
+                navigateToSummary = false
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .resizable()
+                    .frame(width: 24, height: 24)
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding([.top, .horizontal])
+    }
+    
+    private var predictionSection: some View {
+        VStack(alignment: .leading) {
+            Text(result.label)
+                .font(.title2)
+                .fontWeight(.bold)
+            Text(formattedDate)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+        }
+        .padding()
+        .padding(.horizontal)
     }
 
     private var resultSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 12) {
-                Text("\(Int(confidence * 100))%")
+                Text("\(Int(result.confidence * 100))%")
                     .font(.title)
                     .bold()
                     .foregroundColor(resultInfo.color)
@@ -87,17 +115,20 @@ struct SummaryView: View {
                         .font(.headline)
                         .foregroundColor(resultInfo.color)
                     Text(resultInfo.description)
+                        .lineLimit(1)
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
             }
         }
         .padding()
+        .frame(maxWidth: .infinity)
         .background(resultInfo.color.opacity(0.1))
         .cornerRadius(12)
         .padding(.horizontal)
     }
-
+    
+//    MARK : NOT USED!
     private var storageSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Lokasi Penyimpanan Ideal", systemImage: "thermometer")
